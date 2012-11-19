@@ -1,4 +1,4 @@
-
+import netscape.javascript.*;
 
 import processing.opengl.*;
 
@@ -13,7 +13,7 @@ import org.gicentre.utils.network.*;
 import org.gicentre.utils.spatial.*;
 import org.gicentre.utils.geom.*;
 
-
+import processing.serial.*;
 
 XYChart lineChart;
 int valuesToRead = 100;
@@ -33,16 +33,13 @@ int pos = 0;
 float[] filteredData;
 float[] indeces;
 float[] averagedData;
-float[] speeds;
 
 float a;
 float b;
-float g;
   
 void setup()
 {
- // size(1200, 720);
-size(displayWidth, displayHeight);
+  size(displayWidth, displayHeight);
 
   boolean connected = false;
 
@@ -53,7 +50,6 @@ data = new float[lines.length];
 filteredData = new float[lines.length];
 indeces = new float[lines.length];
 averagedData = new float[lines.length];
-speeds = new float[lines.length];
 
 for (int i =0 ; i < lines.length; i++) {
   data[i]=(int(lines[i]));
@@ -77,8 +73,7 @@ for (int i =0 ; i < lines.length; i++) {
      // Axis formatting and labels.
     lineChart.showXAxis(false); 
     lineChart.showYAxis(true); 
-   // lineChart.setMinY(-500);
-   // lineChart.setMaxY(1000);
+    //lineChart.setMinY(0);
       
     lineChart.setYFormat("0");  // Monetary value in $US
     lineChart.setXFormat("0");      // Year
@@ -100,19 +95,12 @@ void draw()
 {
   
   
-        float dt = 1/(float)1500;
-        float xk_1 = 0, vk_1 = 0, ak_1=0;
+  float dt = 0.5;
+        float xk_1 = 0, vk_1 = 0;
          a = mouseX/(float)width;//0.1;
          b = ((float)mouseY*mouseY)/((float)height*height)/10;//0.05; 
-         g = 0.1;
-         
-              if (mousePressed&& (mouseButton == LEFT)) {
-              g=0;
-              }else if (mousePressed&& (mouseButton == CENTER)) {
-              g=0;
-              }
-         
-        float xk =0, vk =0, rk =0, ak =0;
+
+        float xk, vk, rk;
         float xm;
         
         int avg=5;
@@ -134,32 +122,23 @@ void draw()
           
                 xm = averagedData[i];// input signal
 
-                //predictions
-              //  xk = xk_1 +  vk_1 * dt  + 0.5f*dt*dt*ak_1;
-              //  vk = vk_1+dt*ak_1;
-              //  ak = ak_1;
-               xk = xk_1 + ( vk_1 * dt );
+                xk = xk_1 + ( vk_1 * dt );
                 vk = vk_1;
-                
-                //change
+
                 rk = xm - xk;
 
                 xk += a * rk;
-                vk += (b * rk) / dt;// +ak_1 * dt;
-             //   ak += rk * g;///(2*dt*dt);
-                
+                vk += ( b * rk ) / dt;
+
                 xk_1 = xk;
                 vk_1 = vk;
-              //  ak_1 = ak;
               
-              if (mousePressed && (mouseButton == RIGHT)) {
-             filteredData[i]=vk;
-              }else if (mousePressed && (mouseButton == CENTER)) {
-              filteredData[i]=vk;
-              }else {
-                 filteredData[i]=xk;
+              if (mousePressed) {
+              filteredData[i]=vk_1;
+              }else{
+                 filteredData[i]=xk_1;
               }
-                
+               // printf( "%f \t %f\n", xm, xk_1 );
                
         }
 
@@ -168,7 +147,7 @@ void draw()
          // Draw a title over the top of the chart.
     fill(120);
     textSize(20);
-    text("alpha = "+a+" beta =" +b +" gamma =" +g +" MouseX="+ mouseX +" MouseY=" + mouseY , 70,30);
+    text("alpha = "+a+" beta =" +b +" MouseX="+ mouseX +" MouseY=" + mouseY , 70,30);
     textSize(11);
 
         
@@ -176,20 +155,16 @@ void draw()
   
  
  
- int startpoint=100;
+ int startpoint=200;
  int endpoint = 1000;
  
  // if (mousePressed) {
     lineChart.setPointColour(color(180,50,50,100));
     lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(averagedData,startpoint,endpoint));
-     lineChart.showXAxis(false); 
-    lineChart.showYAxis(false); 
     lineChart.draw(15,15,width-30,height-30);
  // }
     lineChart.setPointColour(color(50,150,150,100));
     lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(filteredData,startpoint,endpoint));
-     lineChart.showXAxis(false); 
-    lineChart.showYAxis(true); 
     lineChart.draw(15,15,width-30,height-30);
   
    
