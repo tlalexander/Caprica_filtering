@@ -103,7 +103,7 @@ void draw()
         float xk, vk, rk;
         float xm;
         
-        int avg=5;
+        int avg=5; //number of samples to average for moving average filter
 
         for (int i =0 ; i < data.length; i++) 
         {
@@ -134,7 +134,7 @@ void draw()
                 vk_1 = vk;
               
               if (mousePressed) {
-              filteredData[i]=vk_1;
+              filteredData[i]=vk_1; //if the mouse is pressed, display velocity data, otherwise display position data
               }else{
                  filteredData[i]=xk_1;
               }
@@ -155,7 +155,7 @@ void draw()
   
  
  
- int startpoint=200;
+ int startpoint=200; //these two values define the window of data from our sample that we'll plot (the actual data is 8,281 samples)
  int endpoint = 1000;
  
  // if (mousePressed) {
