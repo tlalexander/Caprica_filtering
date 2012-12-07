@@ -12,6 +12,7 @@ import org.gicentre.utils.*;
 import org.gicentre.utils.network.*;
 import org.gicentre.utils.spatial.*;
 import org.gicentre.utils.geom.*;
+//import org.apache.commons.math.*;
 
 import processing.serial.*;
 
@@ -29,10 +30,14 @@ int pos = 0;
   ArrayList dataArray = new ArrayList();
   ArrayList indexArray = new ArrayList();
   
-  float[] data;
+  int medianCount = 50;
+  
+  double[] data;
+  double[] medianArray;
 float[] filteredData;
 float[] indeces;
 float[] averagedData;
+double[] speedData;
 
 float a;
 float b;
@@ -46,10 +51,12 @@ void setup()
   String lines[] = loadStrings("data.csv");
 println("there are " + lines.length + " lines");
 
-data = new float[lines.length];
+data = new double[lines.length];
 filteredData = new float[lines.length];
 indeces = new float[lines.length];
 averagedData = new float[lines.length];
+speedData = new double[lines.length];
+medianArray = new double[medianCount];
 
 for (int i =0 ; i < lines.length; i++) {
   data[i]=(int(lines[i]));
@@ -93,12 +100,15 @@ for (int i =0 ; i < lines.length; i++) {
   */
 void draw()
 {
+  Percentile p = new Percentile();
   
   
   float dt = 0.5;
         float xk_1 = 0, vk_1 = 0;
          a = mouseX/(float)width;//0.1;
-         b = ((float)mouseY*mouseY)/((float)height*height)/10;//0.05; 
+         b = ((float)mouseY*mouseY)/((float)height*height)/10;//0.03; 
+       //  a=.1;
+        // b=.03;
 
         float xk, vk, rk;
         float xm;
@@ -109,15 +119,23 @@ void draw()
         {
           if(i<avg)
           {
-          averagedData[i]=data[i];
+          averagedData[i]=(float)data[i];
           }else
           {
             int sum=0;
+            
+            //medianArray=Arrays.copyOfRange(data,i-medianCount,i);
+            
             for(int j = 0; j< avg; j++)
             {
               sum+=data[i-j];
             }
-           averagedData[i]=(float)sum/avg;
+         
+        // if (!mousePressed) {
+           averagedData[i]=(float)sum/avg;//(float)p.evaluate(medianArray, 50);    //(float)sum/avg;
+      //   } else{
+        //   averagedData[i]=(float)data[i-2];//(float)sum/avg;
+       //  }
           }
           
                 xm = averagedData[i];// input signal
@@ -129,15 +147,23 @@ void draw()
 
                 xk += a * rk;
                 vk += ( b * rk ) / dt;
+                
+               // speedData[i]=xk-xk_1;
 
                 xk_1 = xk;
                 vk_1 = vk;
               
-              if (mousePressed) {
-              filteredData[i]=vk_1; //if the mouse is pressed, display velocity data, otherwise display position data
-              }else{
-                 filteredData[i]=xk_1;
-              }
+             // if (mousePressed) {
+              speedData[i]=vk_1; //if the mouse is pressed, display velocity data, otherwise display position data
+              averagedData[i]=vk_1;
+          //   }else{
+            if(i>=medianCount){
+            medianArray=Arrays.copyOfRange(speedData,i-medianCount,i);
+                 filteredData[i]=(float)p.evaluate(medianArray, 50);
+            }else{
+              filteredData[i]=0;
+            }
+            //  }
                // printf( "%f \t %f\n", xm, xk_1 );
                
         }
@@ -158,18 +184,48 @@ void draw()
  int startpoint=200; //these two values define the window of data from our sample that we'll plot (the actual data is 8,281 samples)
  int endpoint = 1000;
  
- // if (mousePressed) {
+  if (mousePressed) {
     lineChart.setPointColour(color(180,50,50,100));
-    lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(averagedData,startpoint,endpoint));
-    lineChart.draw(15,15,width-30,height-30);
- // }
-    lineChart.setPointColour(color(50,150,150,100));
     lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(filteredData,startpoint,endpoint));
     lineChart.draw(15,15,width-30,height-30);
-  
+  } else{
+    lineChart.setPointColour(color(50,150,150,100));
+    lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(averagedData,startpoint,endpoint));
+    lineChart.draw(15,15,width-30,height-30);
+    
+   // lineChart.setPointColour(color(20,20,150,100));
+   // lineChart.setData(Arrays.copyOfRange(indeces,startpoint,endpoint), Arrays.copyOfRange(speedData,startpoint,endpoint));
+   // lineChart.draw(15,15,width-30,height-30);
+  }
    
 
  
   
 }
+
+void averageFilter(double[] dataIn, double[] dataOut, int avg)
+{
+   for (int i =0 ; i < dataIn.length; i++) 
+        {
+          if(i<avg)
+          {
+          averagedData[i]=(float)data[i];
+          }else
+          {
+            int sum=0;
+            
+            //medianArray=Arrays.copyOfRange(data,i-medianCount,i);
+            
+            for(int j = 0; j< avg; j++)
+            {
+              sum+=data[i-j];
+            }
+         
+           dataOut[i]=(float)sum/avg;//(float)p.evaluate(medianArray, 50);    //(float)sum/avg;
+     
+          }
+          
+        } 
+}
+
 
